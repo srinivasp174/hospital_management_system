@@ -1,6 +1,7 @@
 from flask import Flask
 from config import Config
-from extenstions import db, jwt, bcrypt, init_redis
+from extensions import db, jwt, bcrypt, init_redis
+import models
 
 def create_app():
     app = Flask(__name__)

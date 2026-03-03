@@ -8,8 +8,8 @@ basedir = os.path.abspath(os.path.dirname(__file__))
 class Config:
     SECRET_KEY = os.getenv("SECRET_KEY")
     
-    db_url = os.getenv("DATABSE_URL")
-    if db_url == "sqlite:///instance/hms.db":
+    db_url = os.getenv("DATABASE_URL")
+    if not db_url or db_url == "sqlite:///instance/hms.db":
         db_url = f"sqlite:///{os.path.join(basedir, 'instance', 'hms.db')}"
         
     SQLALCHEMY_DATABASE_URI = db_url

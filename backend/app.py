@@ -2,6 +2,9 @@ from flask import Flask
 from config import Config
 from extensions import db, jwt, bcrypt, init_redis
 import models
+from create_admin import create_admin
+from routes.admin_routes import admin_bp
+from routes.auth_routes import auth_bp
 
 def create_app():
     app = Flask(__name__)
@@ -18,10 +21,13 @@ def create_app():
 
     with app.app_context():
         db.create_all()
+        create_admin()
     
     return app
 
 app = create_app()
+app.register_blueprint(admin_bp)
+app.register_blueprint(auth_bp) 
 
 if __name__ == "__main__":
     app.run(debug=True)

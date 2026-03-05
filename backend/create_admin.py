@@ -21,7 +21,7 @@ def create_admin():
         phone='9999999999',
         email='admin@hms.com',
         role=UserRole.ADMIN,
-        is_Active=True
+        is_active=True
     )
     
     admin.set_password("admin123")

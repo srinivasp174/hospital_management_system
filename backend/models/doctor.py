@@ -32,3 +32,5 @@ class Doctor(db.Model):
         "Department",
         backref="doctors"
     )
+    
+    specialization = db.Column(db.String(100))

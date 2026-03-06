@@ -22,12 +22,14 @@ def create_app():
     with app.app_context():
         db.create_all()
         create_admin()
+        
+    app.register_blueprint(admin_bp)
+    app.register_blueprint(auth_bp)
     
     return app
 
 app = create_app()
-app.register_blueprint(admin_bp)
-app.register_blueprint(auth_bp) 
+
 
 if __name__ == "__main__":
     app.run(debug=True)

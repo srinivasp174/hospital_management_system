@@ -1,6 +1,6 @@
 from flask import Flask
 from config import Config
-from extensions import db, jwt, bcrypt, init_redis
+from extensions import db, jwt, bcrypt, cors, init_redis
 import models
 from create_admin import create_admin
 from routes.admin_routes import admin_bp
@@ -13,6 +13,7 @@ def create_app():
     db.init_app(app)
     jwt.init_app(app)
     bcrypt.init_app(app)
+    cors.init_app(app)
     init_redis(app)
     
     @app.route('/')

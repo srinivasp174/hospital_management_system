@@ -7,6 +7,7 @@ import redis
 db = SQLAlchemy()
 jwt = JWTManager()
 bcrypt = Bcrypt()
+cors = CORS()
 redis_client = None
 
 def init_redis(app):

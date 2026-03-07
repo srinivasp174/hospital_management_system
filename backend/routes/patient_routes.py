@@ -88,10 +88,9 @@ def list_doctors():
 @patient_bp.route("/doctors/<int:doctor_id>", methods=["GET"])
 @role_required("patient")
 def doctor_details(doctor_id):
-    
-    doctor = Doctor.query.get_or_404(doctor_id)
+    doctor = Doctor.query.filter_by(user_id=doctor_id).first_or_404()
     user = doctor.user
-    
+
     return jsonify(
         {
             "doctor_id": doctor.user_id,
@@ -102,13 +101,12 @@ def doctor_details(doctor_id):
             "department": doctor.department.name,
             "availability": doctor.availability
         }
-    )
-    
+    ), 200
+
 @patient_bp.route("/doctors/<int:doctor_id>/availability", methods=["GET"])
 @role_required("patient")
 def doctor_availability(doctor_id):
-    doctor = Doctor.query.get_or_404(doctor_id)
-    
+    doctor = Doctor.query.filter_by(user_id=doctor_id).first_or_404()
     return jsonify({
         "doctor_id": doctor.user_id,
         "availability": doctor.availability
@@ -117,9 +115,9 @@ def doctor_availability(doctor_id):
 @patient_bp.route("/appointments", methods=["POST"])
 @role_required("patient")
 def book_appointment():
-
     data = request.get_json()
-
+    if not data:
+        return jsonify({"error": "Request body required"}), 400
     doctor_id = data.get("doctor_id")
     date_str = data.get("date")
     time_str = data.get("time")
@@ -136,7 +134,7 @@ def book_appointment():
     if date < datetime.today().date():
         return jsonify({"error": "Cannot book appointments in the past"}), 400
 
-    patient_id = get_jwt_identity()
+    patient_id = int(get_jwt_identity())
 
     appointment, message = create_appointment(
         doctor_id,
@@ -156,7 +154,7 @@ def book_appointment():
 @patient_bp.route("/appointments", methods=["GET"])
 @role_required("patient")
 def view_appointments():
-    patient_id = get_jwt_identity()
+    patient_id = int(get_jwt_identity())
     
     appointments = Appointment.query.filter_by(
         patient_id=patient_id
@@ -175,13 +173,13 @@ def view_appointments():
             "status": a.status.value
         })
     
-    return jsonify(result)
+    return jsonify(result), 200
 
 @patient_bp.route("/appointments/<int:appointment_id>", methods=["PUT"])
 @role_required("patient")
 def reschedule_appointment(appointment_id):
 
-    patient_id = get_jwt_identity()
+    patient_id = int(get_jwt_identity())
     data = request.get_json()
 
     date_str = data.get("date")
@@ -224,13 +222,12 @@ def reschedule_appointment(appointment_id):
         "appointment_id": appointment.id,
         "date": appointment.date.isoformat(),
         "time": appointment.time.strftime("%H:%M")
-    })
-
+    }), 200
 
 @patient_bp.route("/appointments/<int:appointment_id>", methods=["DELETE"])
 @role_required("patient")
 def cancel_appointment(appointment_id):
-    patient_id = get_jwt_identity()
+    patient_id = int(get_jwt_identity())
     appointment = Appointment.query.get_or_404(appointment_id)
 
     if appointment.patient_id != patient_id:
@@ -239,32 +236,51 @@ def cancel_appointment(appointment_id):
     appointment.status = AppointmentStatus.CANCELLED
     db.session.commit()
 
-    return jsonify({"message": "Appointment cancelled"})
+    return jsonify({"message": "Appointment cancelled"}), 200
 
-@patient_bp.route("history")
+@patient_bp.route("/history")
 @role_required("patient")
 def patient_history():
-    patient_id = get_jwt_identity()
-    appointments = Appointment.query.filter_by(
-        patient_id=patient_id
-    ).all()
-    
+    patient_id = int(get_jwt_identity())
+    appointments = Appointment.query.filter_by(patient_id=patient_id).all()
+
     history = []
-    
-    
     for a in appointments:
         if not a.treatment:
             continue
-        
-        doctor = a.user
-        
+
+        doctor = a.doctor.user
+
         history.append({
             "doctor": build_full_name(doctor),
             "date": a.date.isoformat(),
             "diagnosis": a.treatment.diagnosis,
             "prescription": a.treatment.prescription,
-            "notes": a.treatment.note
+            "notes": a.treatment.notes
         })
-    
-    return jsonify(history)
+
+    return jsonify(history), 200
+
+@patient_bp.route("/profile", methods=["PUT"])
+@role_required("patient")
+def update_profile():
+    patient_id = int(get_jwt_identity())
+    user = User.query.get_or_404(patient_id)
+    patient = Patient.query.filter_by(user_id=patient_id).first_or_404()
+    data = request.get_json()
+
+    if not data:
+        return jsonify({"error": "No data provided"}), 400
+
+    user.first_name = data.get("first_name", user.first_name)
+    user.middle_name = data.get("middle_name", user.middle_name)
+    user.last_name = data.get("last_name", user.last_name)
+    user.phone = data.get("phone", user.phone)
+
+    patient.blood_group = data.get("blood_group", patient.blood_group)
+    patient.allergies = data.get("allergies", patient.allergies)
+    patient.chronic_conditions = data.get("chronic_conditions", patient.chronic_conditions)
+
+    db.session.commit()
+    return jsonify({"message": "Profile updated"}), 200
 

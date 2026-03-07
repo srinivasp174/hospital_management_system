@@ -5,6 +5,7 @@ import models
 from create_admin import create_admin
 from routes.admin_routes import admin_bp
 from routes.auth_routes import auth_bp
+from routes.patient_routes import patient_bp
 
 def create_app():
     app = Flask(__name__)
@@ -26,6 +27,7 @@ def create_app():
         
     app.register_blueprint(admin_bp)
     app.register_blueprint(auth_bp)
+    app.register_blueprint(patient_bp)
     
     return app
 
